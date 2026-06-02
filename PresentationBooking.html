@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presentation Booking — July 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #f5f4f0;
+    --surface:  #ffffff;
+    --border:   #e2e0d8;
+    --border2:  #ccc9be;
+    --text:     #1a1916;
+    --muted:    #6b6960;
+    --subtle:   #9e9b90;
+    --accent:   #2d5a8e;
+    --accent-l: #e8eff7;
+    --success:  #1a6b45;
+    --success-l:#e4f5ed;
+    --danger:   #8e2d2d;
+    --danger-l: #f7e8e8;
+    --warn:     #7a5c00;
+    --warn-l:   #fdf5dc;
+    --radius:   10px;
+    --shadow:   0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  /* ── Layout ── */
+  .page { max-width: 980px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .header { margin-bottom: 2rem; }
+  .header-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+  .header h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+  .header h1 span { color: var(--accent); }
+  .header p { font-size: 0.875rem; color: var(--muted); margin-top: 4px; }
+  .refresh-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; font-size: 0.8125rem; font-family: inherit;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius); cursor: pointer; color: var(--muted);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .refresh-btn:hover { background: var(--border); border-color: var(--border2); }
+  .refresh-btn svg { width: 14px; height: 14px; }
+
+  /* ── Stats ── */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.75rem; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .stat-card .label { font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-card .value { font-size: 1.625rem; font-weight: 600; letter-spacing: -0.02em; }
+  .stat-card.total .value  { color: var(--text); }
+  .stat-card.booked .value { color: var(--accent); }
+  .stat-card.avail  .value { color: var(--success); }
+
+  /* ── Session banner ── */
+  #config-banner {
+    background: var(--warn-l); border: 1px solid #e8d98a;
+    border-radius: var(--radius); padding: 12px 16px;
+    font-size: 0.8125rem; color: var(--warn); margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  #config-banner svg { flex-shrink: 0; width: 16px; height: 16px; }
+  #config-banner a { color: var(--warn); font-weight: 500; }
+
+  /* ── Table wrapper ── */
+  .table-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    overflow-x: auto;
+  }
+
+  /* ── Section labels ── */
+  .section-row td, .section-row th {
+    background: var(--bg); font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--subtle); padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; min-width: 680px; }
+
+  thead th {
+    padding: 12px 8px; font-size: 0.75rem; font-weight: 600;
+    color: var(--muted); text-align: center;
+    border-bottom: 2px solid var(--border2); white-space: nowrap;
+  }
+  thead th.time-col { text-align: left; padding-left: 16px; min-width: 120px; }
+
+  thead .day-name { font-size: 0.6875rem; color: var(--subtle); font-weight: 400; display: block; }
+  thead .day-num  { font-size: 0.9375rem; font-weight: 600; display: block; margin-top: 2px; }
+  thead .month    { font-size: 0.6875rem; color: var(--subtle); font-weight: 400; }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  tbody td {
+    padding: 5px 5px; border-bottom: 1px solid var(--border); vertical-align: middle;
+  }
+  tbody td.time-cell {
+    padding-left: 16px; font-size: 0.75rem; font-family: 'DM Mono', monospace;
+    color: var(--muted); white-space: nowrap; border-right: 1px solid var(--border);
+  }
+
+  /* ── Slot buttons ── */
+  .slot-btn {
+    width: 100%; min-width: 80px; padding: 7px 6px;
+    border-radius: 7px; font-family: inherit; font-size: 0.75rem;
+    font-weight: 500; cursor: pointer; transition: all 0.15s;
+    border: 1px solid transparent; text-align: center;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .slot-free {
+    background: var(--bg); border-color: var(--border);
+    color: var(--muted);
+  }
+  .slot-free:hover { background: var(--accent-l); border-color: var(--accent); color: var(--accent); }
+  .slot-booked { color: #fff; }
+  .slot-booked:hover { opacity: 0.85; filter: brightness(0.92); }
+  .slot-loading { opacity: 0.5; pointer-events: none; }
+
+  /* ── Legend ── */
+  .legend { display: flex; align-items: center; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--muted); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+  /* ── Overlay ── */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10,10,8,0.45); z-index: 50;
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  .overlay.open { display: flex; }
+
+  /* ── Modal ── */
+  .modal {
+    background: var(--surface); border-radius: 14px;
+    border: 1px solid var(--border2); width: 100%; max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18); padding: 1.5rem;
+    animation: pop 0.18s ease;
+  }
+  @keyframes pop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .modal h2 { font-size: 1.0625rem; font-weight: 600; margin-bottom: 4px; }
+  .modal .modal-meta { font-size: 0.8125rem; color: var(--muted); margin-bottom: 1.25rem; }
+  .modal .modal-meta strong { color: var(--text); font-weight: 500; }
+
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 0.8125rem; font-weight: 500; margin-bottom: 5px; color: var(--text); }
+  .form-group label span { font-weight: 400; color: var(--subtle); }
+  .form-group input {
+    width: 100%; padding: 9px 12px; font-family: inherit; font-size: 0.875rem;
+    background: var(--bg); border: 1px solid var(--border2);
+    border-radius: 8px; color: var(--text); outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,90,142,0.12); }
+  .form-group input::placeholder { color: var(--subtle); }
+
+  .error-msg { font-size: 0.8rem; color: var(--danger); margin-bottom: 10px; display: none; }
+  .error-msg.show { display: block; }
+
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+  .btn {
+    padding: 9px 18px; font-family: inherit; font-size: 0.875rem;
+    font-weight: 500; border-radius: 8px; cursor: pointer; border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+  .btn-secondary { background: var(--bg); border-color: var(--border2); color: var(--muted); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-danger { background: var(--danger-l); color: var(--danger); border-color: #e8b8b8; }
+  .btn-danger:hover { background: #f0cccc; }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; filter: none; }
+
+  /* ── Cancel modal ── */
+  .cancel-booking-info {
+    background: var(--bg); border-radius: 8px; padding: 12px 14px;
+    margin-bottom: 1.25rem; font-size: 0.8125rem;
+  }
+  .cancel-booking-info .team-name { font-size: 1rem; font-weight: 600; margin-bottom: 3px; }
+  .cancel-booking-info .contact-name { color: var(--muted); }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(12px);
+    background: #1a1916; color: #fff; padding: 10px 20px;
+    border-radius: 100px; font-size: 0.875rem; font-weight: 500;
+    opacity: 0; transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none; z-index: 200; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Loading spinner ── */
+  #loading-overlay {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 300;
+    gap: 14px;
+  }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border2);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading-overlay p { font-size: 0.875rem; color: var(--muted); }
+
+  /* ── Setup screen ── */
+  #setup-screen {
+    display: none; max-width: 520px; margin: 3rem auto;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 14px; padding: 2rem; box-shadow: var(--shadow);
+  }
+  #setup-screen h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 8px; }
+  #setup-screen p  { font-size: 0.875rem; color: var(--muted); margin-bottom: 1.25rem; line-height: 1.6; }
+  #setup-screen ol { font-size: 0.875rem; color: var(--muted); line-height: 1.9; padding-left: 1.25rem; margin-bottom: 1.5rem; }
+  #setup-screen ol li code { font-family: 'DM Mono', monospace; background: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; color: var(--text); }
+  #setup-screen code.url-display {
+    display: block; font-family: 'DM Mono', monospace; font-size: 0.75rem;
+    background: var(--bg); border: 1px solid var(--border2); border-radius: 8px;
+    padding: 10px 12px; color: var(--muted); word-break: break-all;
+    margin-bottom: 1rem;
+  }
+  #url-input {
+    width: 100%; padding: 9px 12px; font-family: 'DM Mono', monospace; font-size: 0.8125rem;
+    background: var(--bg); border: 1px solid var(--border2); border-radius: 8px;
+    color: var(--text); outline: none; margin-bottom: 10px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  #url-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,90,142,0.12); }
+  #url-input::placeholder { color: var(--subtle); }
+
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .stat-card .value { font-size: 1.25rem; }
+    body { padding: 1rem 0.75rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p>Loading bookings…</p>
+</div>
+
+<!-- Setup screen (shown if no API URL configured) -->
+<div id="setup-screen">
+  <h2>⚙️ Setup required</h2>
+  <p>This booking system uses a Google Sheet as its database. You need to deploy the Apps Script backend once, then paste the Web App URL below.</p>
+  <ol>
+    <li>Open <strong>Google Sheets</strong> → create a new spreadsheet</li>
+    <li>Go to <strong>Extensions → Apps Script</strong></li>
+    <li>Paste the contents of <code>BookingBackend.gs</code> and save</li>
+    <li>Click <strong>Deploy → New deployment</strong></li>
+    <li>Type: <code>Web app</code> · Execute as: <code>Me</code> · Access: <code>Anyone</code></li>
+    <li>Copy the <strong>Web App URL</strong> and paste it below</li>
+  </ol>
+  <input type="text" id="url-input" placeholder="https://script.google.com/macros/s/AKfy.../exec" />
+  <button class="btn btn-primary" onclick="saveUrl()" style="width:100%">Save & connect</button>
+</div>
+
+<!-- Main app -->
+<div class="page" id="app" style="display:none">
+
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <h1>Presentation <span>Booking</span></h1>
+        <p>1–10 July 2026 · Weekdays only · 30-minute slots · All times SGT</p>
+      </div>
+      <button class="refresh-btn" onclick="loadBookings()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div id="config-banner" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>Web App URL not configured. <a href="#" onclick="resetUrl()">Set it up now →</a></span>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card total"><div class="label">Total slots</div><div class="value" id="stat-total">—</div></div>
+    <div class="stat-card booked"><div class="label">Booked</div><div class="value" id="stat-booked">—</div></div>
+    <div class="stat-card avail"><div class="label">Available</div><div class="value" id="stat-avail">—</div></div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="booking-table">
+      <thead id="table-head"></thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--bg);border:1px solid var(--border2)"></div> Available — click to book</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> Booked — admin can cancel</div>
+  </div>
+
+</div>
+
+<!-- Book Modal -->
+<div class="overlay" id="book-overlay" onclick="closeBookModal(event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="book-title">
+    <h2 id="book-title">Book this slot</h2>
+    <div class="modal-meta" id="book-meta"></div>
+    <div class="form-group">
+      <label for="team-input">Team name</label>
+      <input type="text" id="team-input" placeholder="e.g. Alpha Team" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label for="contact-input">Contact person <span>(optional)</span></label>
+      <input type="text" id="contact-input" placeholder="e.g. Jane Doe" autocomplete="off" />
+    </div>
+    <div class="error-msg" id="book-error"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('book-overlay')">Cancel</button>
+      <button class="btn btn-primary" id="confirm-btn" onclick="confirmBooking()">Confirm booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel Modal -->
+<div class="overlay" id="cancel-overlay" onclick="closeCancelModal(event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cancel-title">
+    <h2 id="cancel-title">Cancel this booking?</h2>
+    <div class="modal-meta" id="cancel-meta"></div>
+    <div class="cancel-booking-info" id="cancel-info"></div>
+    <div class="form-group">
+      <label for="admin-password">
+        Admin password
+        <span style="font-size:0.75rem;color:var(--subtle);font-weight:400"> — required to cancel</span>
+      </label>
+      <input type="password" id="admin-password" placeholder="Enter admin password" autocomplete="off" />
+    </div>
+    <div class="error-msg" id="cancel-error"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('cancel-overlay')">Keep it</button>
+      <button class="btn btn-danger" id="cancel-confirm-btn" onclick="confirmCancel()">Yes, cancel booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────
+const STORAGE_KEY = "pres_booking_api_url";
+const DATES = (() => {
+  const out = [];
+  const start = new Date(2026, 6, 1); // July 1
+  for (let i = 0; i < 10; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    if (d.getDay() !== 0 && d.getDay() !== 6) out.push(d);
+  }
+  return out;
+})();
+const MORNING    = ["10:00","10:30","11:00"];
+const AFTERNOON  = ["14:30","15:00","15:30","16:00"];
+const ALL_SLOTS  = [...MORNING, ...AFTERNOON];
+const COLORS = ["#2d5a8e","#1a6b45","#7a3a8e","#8e4a1a","#1a5c6b","#6b1a3a","#3a6b1a","#6b5a1a"];
+const DAY_NAMES  = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+// ── State ────────────────────────────────────────────────────
+let bookings = {};
+let pendingBook = null;
+let pendingCancel = null;
+let colorIndex = 0;
+let apiUrl = localStorage.getItem(STORAGE_KEY) || "https://script.google.com/macros/s/AKfycbwwSfV7jElP3o7eRckYbJ2Db3fEaehyPTjDYqp4eRwixuPxgC--brjWSOn4k2rnoSpH8w/exec";
+
+// ── Helpers ──────────────────────────────────────────────────
+function dateKey(d) { return d.toISOString().slice(0,10); }
+function slotLabel(t) {
+  const [h,m] = t.split(":").map(Number);
+  const e = new Date(0,0,0,h,m+30);
+  const f = (hh,mm) => `${hh}:${String(mm).padStart(2,"0")}`;
+  return `${f(h,m)} – ${f(e.getHours(),e.getMinutes())}`;
+}
+function formatDateLong(d) {
+  return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} 2026`;
+}
+
+// ── Build table ───────────────────────────────────────────────
+function buildTable() {
+  const head = document.getElementById("table-head");
+  const body = document.getElementById("table-body");
+
+  // Header
+  let hRow = `<tr><th class="time-col">Time</th>`;
+  DATES.forEach(d => {
+    hRow += `<th>
+      <span class="day-name">${DAY_NAMES[d.getDay()]}</span>
+      <span class="day-num">${d.getDate()}</span>
+      <span class="month">${MONTH_NAMES[d.getMonth()]}</span>
+    </th>`;
+  });
+  hRow += `</tr>`;
+  head.innerHTML = hRow;
+
+  // Body
+  let html = "";
+  ALL_SLOTS.forEach((slot, si) => {
+    if (slot === "14:30") {
+      html += `<tr class="section-row"><td class="time-cell">Afternoon</td>${DATES.map(()=>`<td></td>`).join("")}</tr>`;
+    } else if (si === 0) {
+      html += `<tr class="section-row"><td class="time-cell">Morning</td>${DATES.map(()=>`<td></td>`).join("")}</tr>`;
+    }
+    html += `<tr>`;
+    html += `<td class="time-cell">${slotLabel(slot)}</td>`;
+    DATES.forEach(d => {
+      const key = `${dateKey(d)}_${slot}`;
+      html += `<td><button class="slot-btn" id="btn-${key}" onclick="onSlotClick('${dateKey(d)}','${slot}')">—</button></td>`;
+    });
+    html += `</tr>`;
+  });
+  body.innerHTML = html;
+}
+
+function renderSlots() {
+  let total = DATES.length * ALL_SLOTS.length;
+  let booked = 0;
+  DATES.forEach(d => {
+    ALL_SLOTS.forEach(slot => {
+      const key = `${dateKey(d)}_${slot}`;
+      const btn = document.getElementById(`btn-${key}`);
+      if (!btn) return;
+      const b = bookings[key];
+      if (b) {
+        booked++;
+        btn.className = "slot-btn slot-booked";
+        btn.style.background = b.color;
+        btn.style.borderColor = b.color;
+        btn.textContent = b.team;
+        btn.title = `${b.team}${b.contact ? " · "+b.contact : ""} — click to cancel`;
+      } else {
+        btn.className = "slot-btn slot-free";
+        btn.style.background = "";
+        btn.style.borderColor = "";
+        btn.textContent = "Book";
+        btn.title = "";
+      }
+    });
+  });
+  document.getElementById("stat-total").textContent = total;
+  document.getElementById("stat-booked").textContent = booked;
+  document.getElementById("stat-avail").textContent = total - booked;
+  colorIndex = booked % COLORS.length;
+}
+
+// ── API calls ─────────────────────────────────────────────────
+// Apps Script requires all requests as GET with query params to avoid CORS preflight.
+async function apiCall(params) {
+  const qs = new URLSearchParams(params).toString();
+  const r = await fetch(`${apiUrl}?${qs}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+async function loadBookings() {
+  if (!apiUrl) { showSetup(); return; }
+  try {
+    const data = await apiCall({ action: "getAll" });
+    if (data.error) throw new Error(data.error);
+    bookings = data.bookings || {};
+    renderSlots();
+  } catch(e) {
+    showToast("⚠ Could not reach server. Check your URL.");
+    console.error(e);
+  }
+}
+
+// ── Slot click ────────────────────────────────────────────────
+function onSlotClick(dateStr, slot) {
+  const key = `${dateStr}_${slot}`;
+  const b = bookings[key];
+  const d = DATES.find(x => dateKey(x) === dateStr);
+  if (b) {
+    pendingCancel = { key, date: d, slot, booking: b };
+    document.getElementById("cancel-meta").innerHTML =
+      `<strong>${formatDateLong(d)}</strong> · ${slotLabel(slot)}`;
+    document.getElementById("cancel-info").innerHTML =
+      `<div class="team-name" style="color:${b.color}">${b.team}</div>
+       ${b.contact ? `<div class="contact-name">${b.contact}</div>` : ""}`;
+    document.getElementById("admin-password").value = "";
+    document.getElementById("cancel-error").classList.remove("show");
+    openModal("cancel-overlay");
+    setTimeout(() => document.getElementById("admin-password").focus(), 60);
+  } else {
+    pendingBook = { key, date: d, slot };
+    document.getElementById("book-meta").innerHTML =
+      `<strong>${formatDateLong(d)}</strong> · ${slotLabel(slot)}`;
+    document.getElementById("team-input").value = "";
+    document.getElementById("contact-input").value = "";
+    document.getElementById("book-error").classList.remove("show");
+    openModal("book-overlay");
+    setTimeout(() => document.getElementById("team-input").focus(), 60);
+  }
+}
+
+// ── Confirm booking ───────────────────────────────────────────
+async function confirmBooking() {
+  const team = document.getElementById("team-input").value.trim();
+  const contact = document.getElementById("contact-input").value.trim();
+  const errEl = document.getElementById("book-error");
+  if (!team) { errEl.textContent = "Team name is required."; errEl.classList.add("show"); return; }
+  errEl.classList.remove("show");
+
+  const btn = document.getElementById("confirm-btn");
+  btn.disabled = true; btn.textContent = "Booking…";
+
+  const color = COLORS[colorIndex % COLORS.length];
+  try {
+    const res = await apiCall({
+      action: "book", key: pendingBook.key,
+      date: dateKey(pendingBook.date), slot: pendingBook.slot,
+      team, contact, color
+    });
+    if (res.error) {
+      errEl.textContent = res.error === "Slot already booked"
+        ? "This slot was just taken. Refreshing…" : res.error;
+      errEl.classList.add("show");
+      await loadBookings();
+    } else {
+      bookings[pendingBook.key] = { team, contact, color };
+      renderSlots();
+      closeModal("book-overlay");
+      showToast(`✓ Booked for ${team}`);
+    }
+  } catch(e) {
+    errEl.textContent = "Connection error. Please try again.";
+    errEl.classList.add("show");
+  }
+  btn.disabled = false; btn.textContent = "Confirm booking";
+}
+
+// ── Confirm cancel ────────────────────────────────────────────
+async function confirmCancel() {
+  const password = document.getElementById("admin-password").value;
+  const errEl = document.getElementById("cancel-error");
+  if (!password) { errEl.textContent = "Please enter the admin password."; errEl.classList.add("show"); return; }
+
+  const btn = document.getElementById("cancel-confirm-btn");
+  btn.disabled = true; btn.textContent = "Cancelling…";
+  try {
+    const res = await apiCall({ action: "cancel", key: pendingCancel.key, password });
+    if (res.error === "Unauthorised") {
+      errEl.textContent = "Incorrect password. Only the admin can cancel bookings.";
+      errEl.classList.add("show");
+    } else if (res.error) {
+      errEl.textContent = res.error; errEl.classList.add("show");
+    } else {
+      delete bookings[pendingCancel.key];
+      renderSlots();
+      closeModal("cancel-overlay");
+      showToast("Booking cancelled.");
+    }
+  } catch(e) { errEl.textContent = "Connection error. Please try again."; errEl.classList.add("show"); }
+  btn.disabled = false; btn.textContent = "Yes, cancel booking";
+}
+
+// ── Modal helpers ─────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+function closeBookModal(e)   { if (e.target.id === "book-overlay")   closeModal("book-overlay"); }
+function closeCancelModal(e) { if (e.target.id === "cancel-overlay") closeModal("cancel-overlay"); }
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { closeModal("book-overlay"); closeModal("cancel-overlay"); }
+  if (e.key === "Enter" && document.getElementById("book-overlay").classList.contains("open")) confirmBooking();
+  if (e.key === "Enter" && document.getElementById("cancel-overlay").classList.contains("open")) confirmCancel();
+});
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+// ── Setup / URL management ────────────────────────────────────
+function showSetup() {
+  document.getElementById("loading-overlay").style.display = "none";
+  document.getElementById("app").style.display = "none";
+  document.getElementById("setup-screen").style.display = "block";
+}
+function saveUrl() {
+  const val = document.getElementById("url-input").value.trim();
+  if (!val.startsWith("https://script.google.com")) {
+    alert("Please paste a valid Google Apps Script Web App URL.");
+    return;
+  }
+  apiUrl = val;
+  localStorage.setItem(STORAGE_KEY, apiUrl);
+  document.getElementById("setup-screen").style.display = "none";
+  init();
+}
+function resetUrl() {
+  localStorage.removeItem(STORAGE_KEY);
+  apiUrl = "";
+  showSetup();
+}
+
+// ── Init ──────────────────────────────────────────────────────
+async function init() {
+  document.getElementById("loading-overlay").style.display = "flex";
+  buildTable();
+  if (!apiUrl) { showSetup(); return; }
+  document.getElementById("app").style.display = "block";
+  await loadBookings();
+  document.getElementById("loading-overlay").style.display = "none";
+  document.getElementById("config-banner").style.display = "none";
+}
+
+init();
+</script>
+</body>
+</html>
